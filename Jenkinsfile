@@ -3,6 +3,14 @@ pipeline {
 
     stages {
 
+        stage('Create Network') {
+            steps {
+                sh '''
+                docker network create labnet || true
+                '''
+            }
+        }
+
         stage('Build Backend Image') {
             steps {
                 sh '''
@@ -16,9 +24,9 @@ pipeline {
             steps {
                 sh '''
                 docker rm -f backend1 backend2 || true
-                docker run -d --name backend1 backend-app
-                docker run -d --name backend2 backend-app
-                sleep 3
+                docker run -d --network labnet --name backend1 backend-app
+                docker run -d --network labnet --name backend2 backend-app
+                sleep 5
                 '''
             }
         }
@@ -27,8 +35,8 @@ pipeline {
             steps {
                 sh '''
                 docker rm -f nginx-lb || true
-                docker run -d -p 80:80 --name nginx-lb nginx
-                sleep 2
+                docker run -d -p 80:80 --network labnet --name nginx-lb nginx
+                sleep 3
                 docker cp nginx/default.conf nginx-lb:/etc/nginx/conf.d/default.conf
                 docker exec nginx-lb nginx -s reload
                 '''
